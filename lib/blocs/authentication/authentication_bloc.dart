@@ -18,7 +18,8 @@ class AuthenticationBloc
   Stream<AuthenticationState> mapEventToState(
     AuthenticationEvent event,
   ) async* {
-    print('mapEventToState: $event');
+    print('AuthenticationBloc - mapEventToState: $event');
+
     if (event is AppStarted) {
       final bool isAuthenticated = await _userRepository.isAuthenticated();
 
