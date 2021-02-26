@@ -22,7 +22,7 @@ class Services extends StatelessWidget {
     this.isDevelopement = false,
   }) : super(key: key) {
     print('Servives loaded...');
-    Bloc.observer = SimpleBlocObserver();
+    Bloc.observer = ServiceSimpleBlocObserver();
   }
 
   @override
@@ -51,7 +51,7 @@ class Services extends StatelessWidget {
                 userRepository: FirebaseUserRepository(
                   firebaseAuth: FirebaseAuth.instance,
                 ),
-              )..add(AppStarted()),
+              ),
             ),
             BlocProvider<ReservationBloc>(
               create: (context) => ReservationBloc(
@@ -61,12 +61,7 @@ class Services extends StatelessWidget {
               ),
             ),
           ],
-          child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
-            builder: (context, state) {
-              print('Service (AuthenticationBloc): $state');
-              return child;
-            },
-          ),
+          child: child,
         );
       },
     );

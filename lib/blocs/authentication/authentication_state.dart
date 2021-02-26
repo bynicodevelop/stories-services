@@ -22,3 +22,11 @@ class Authenticated extends AuthenticationState {
 }
 
 class Unauthenticated extends AuthenticationState {}
+
+class AuthenticationErrors extends AuthenticationState {
+  final String errorCode;
+
+  AuthenticationErrors({this.errorCode});
+
+  List<Object> get props => [errorCode];
+}
