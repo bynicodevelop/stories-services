@@ -326,6 +326,40 @@ main() {
         ),
       );
     });
+
+    test(
+        "Doit soulever une exception si l'utilisater essaye d'email un email invalide",
+        () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.updateEmail('john.doe@domain.tld'))
+          .thenThrow(FirebaseAuthException(
+        code: 'invalid-email',
+        message: null,
+      ));
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      // ASSERT
+      expect(
+        () async => await firebaseUserRepository.updateEmail(
+          'john.doe@domain.tld',
+        ),
+        throwsA(
+          allOf(
+            isInstanceOf<UserRepositoryException>(),
+            predicate((f) => f.code == UserRepositoryException.INVALID_EMAIL),
+          ),
+        ),
+      );
+    });
   });
 }
 

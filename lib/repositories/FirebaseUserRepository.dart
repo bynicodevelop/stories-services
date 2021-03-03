@@ -76,7 +76,10 @@ class FirebaseUserRepository implements UserRepository {
             code: UserRepositoryException.REQUIRES_RECENT_LOGIN);
       }
 
-      // TODO: Invalid email
+      if (e.code == 'invalid-email') {
+        throw UserRepositoryException(
+            code: UserRepositoryException.INVALID_EMAIL);
+      }
     }
   }
 
