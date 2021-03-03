@@ -15,8 +15,11 @@ class FirebaseUserRepository implements UserRepository {
   }
 
   @override
-  Future<String> authencateWithEmail(String email, String password) async {
-    String uid;
+  Future<Map<String, String>> authencateWithEmail(
+    String email,
+    String password,
+  ) async {
+    Map<String, String> data = {};
 
     try {
       UserCredential userCredential =
@@ -25,7 +28,8 @@ class FirebaseUserRepository implements UserRepository {
         password: password,
       );
 
-      uid = userCredential.user.uid;
+      data['uid'] = userCredential.user.uid;
+      data['email'] = userCredential.user.email;
     } on FirebaseAuthException catch (e) {
       print('e.code: ${e.code}');
 
@@ -42,12 +46,38 @@ class FirebaseUserRepository implements UserRepository {
       }
     }
 
-    return uid;
+    return data;
   }
 
   @override
   Future<String> getUserId() async {
     return firebaseAuth.currentUser.uid;
+  }
+
+  @override
+  Future<String> getUserEmail() async {
+    return firebaseAuth.currentUser.email;
+  }
+
+  @override
+  Future<void> updateEmail(String email) async {
+    try {
+      await firebaseAuth.currentUser.updateEmail(email);
+    } on FirebaseAuthException catch (e) {
+      print(e.code);
+
+      if (e.code == 'account-exists-with-different-credential') {
+        throw UserRepositoryException(
+            code: UserRepositoryException.EMAIL_ALREADY_EXISTS);
+      }
+
+      if (e.code == 'requires-recent-login') {
+        throw UserRepositoryException(
+            code: UserRepositoryException.REQUIRES_RECENT_LOGIN);
+      }
+
+      // TODO: Invalid email
+    }
   }
 
   @override

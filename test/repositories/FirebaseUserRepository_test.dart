@@ -148,6 +148,7 @@ main() {
       FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
 
       when(firebaseUserMock.uid).thenReturn('123456789');
+      when(firebaseUserMock.email).thenReturn('john.doe@domain.tld');
 
       when(userCredentialMock.user).thenReturn(firebaseUserMock);
 
@@ -162,12 +163,14 @@ main() {
 
       // ACT
       // ASSERT
-      final String result = await firebaseUserRepository.authencateWithEmail(
+      final Map<String, String> result =
+          await firebaseUserRepository.authencateWithEmail(
         'john.doe@domain.tld',
         '123456',
       );
 
-      expect(result, '123456789');
+      expect(result['uid'], '123456789');
+      expect(result['email'], 'john.doe@domain.tld');
     });
   });
 
@@ -196,6 +199,7 @@ main() {
       FirebaseUserMock userMock = FirebaseUserMock();
 
       when(userMock.uid).thenReturn('123456789');
+      when(userMock.email).thenReturn('john.doe@domain.tld');
 
       when(firebaseAuthMock.currentUser).thenReturn(userMock);
 
@@ -208,6 +212,119 @@ main() {
 
       // ASSERT
       expect(uid, "123456789");
+    });
+  });
+
+  group("getUserEmail", () {
+    test("Doit appeler les proporiété pour avoir l'email de l'utilisateur",
+        () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.email).thenReturn('john.doe@domain.tld');
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      String email = await firebaseUserRepository.getUserEmail();
+
+      // ASSERT
+      expect(email, "john.doe@domain.tld");
+    });
+  });
+
+  group("updateEmail", () {
+    test("Doit mettre à jour l'email de l'utilisateur", () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.updateEmail('john.doe@domain.tld')).thenReturn(null);
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      await firebaseUserRepository.updateEmail('john.doe@domain.tld');
+
+      // ASSERT
+      verify(userMock.updateEmail('john.doe@domain.tld'));
+    });
+
+    test("Doit soulever une exception si l'email existe déjà", () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.updateEmail('john.doe@domain.tld'))
+          .thenThrow(FirebaseAuthException(
+        code: 'account-exists-with-different-credential',
+        message: null,
+      ));
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      // ASSERT
+      expect(
+        () async => await firebaseUserRepository.updateEmail(
+          'john.doe@domain.tld',
+        ),
+        throwsA(
+          allOf(
+            isInstanceOf<UserRepositoryException>(),
+            predicate(
+                (f) => f.code == UserRepositoryException.EMAIL_ALREADY_EXISTS),
+          ),
+        ),
+      );
+    });
+
+    test(
+        "Doit soulever une exception si l'utilisater essaye de modifier son email sans être connecté",
+        () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.updateEmail('john.doe@domain.tld'))
+          .thenThrow(FirebaseAuthException(
+        code: 'requires-recent-login',
+        message: null,
+      ));
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      // ASSERT
+      expect(
+        () async => await firebaseUserRepository.updateEmail(
+          'john.doe@domain.tld',
+        ),
+        throwsA(
+          allOf(
+            isInstanceOf<UserRepositoryException>(),
+            predicate(
+                (f) => f.code == UserRepositoryException.REQUIRES_RECENT_LOGIN),
+          ),
+        ),
+      );
     });
   });
 }

@@ -19,27 +19,49 @@ class AuthenticationBloc
   Stream<AuthenticationState> mapEventToState(
     AuthenticationEvent event,
   ) async* {
-    print('AuthenticationBloc - mapEventToState: $event');
+    print('Service AuthenticationBloc - mapEventToState: $event');
 
     if (event is AppStarted) {
       final bool isAuthenticated = await _userRepository.isAuthenticated();
 
       if (isAuthenticated) {
-        yield Authenticated(await _userRepository.getUserId());
+        yield Authenticated(
+          userId: await _userRepository.getUserId(),
+          email: await _userRepository.getUserEmail(),
+        );
         return;
       }
 
       yield Unauthenticated();
     } else if (event is SignInWithEmailAndPassword) {
       try {
-        final String uid = await _userRepository.authencateWithEmail(
+        final Map<String, String> data =
+            await _userRepository.authencateWithEmail(
           event.email,
           event.password,
         );
 
-        yield Authenticated(uid);
+        yield Authenticated(
+          userId: data['uid'],
+          email: data['email'],
+        );
       } on UserRepositoryException catch (e) {
         yield AuthenticationErrors(errorCode: e.code);
+      }
+    } else if (event is UpdateEmailProfileEvent) {
+      print(event.props);
+      try {
+        await _userRepository.updateEmail(event.email);
+
+        yield ProfileUpdated();
+
+        yield AuthenticationInitialState();
+      } on UserRepositoryException catch (e) {
+        yield AuthenticationErrors(errorCode: e.code);
+
+        yield AuthenticationInitialState();
+      } catch (e) {
+        print(e);
       }
     } else if (event is SignOut) {
       await _userRepository.signOut();

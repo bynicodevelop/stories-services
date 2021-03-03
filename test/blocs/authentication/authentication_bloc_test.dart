@@ -27,7 +27,8 @@ main() {
       expect(await authenticatedState.first, Unauthenticated());
     });
 
-    test("Doit retourner Authenticated si l'utilisateur est pas connecté",
+    test(
+        "Doit retourner Authenticated avec email et userID si l'utilisateur est connecté",
         () async {
       // ARRANGE
       UserRepositoryMock userRepositoryMock = UserRepositoryMock();
@@ -37,6 +38,9 @@ main() {
 
       when(userRepositoryMock.getUserId())
           .thenAnswer((_) => Future.value('true'));
+
+      when(userRepositoryMock.getUserEmail())
+          .thenAnswer((_) => Future.value('john.doe@domain.tld'));
 
       // ignore: close_sinks
       final AuthenticationBloc authenticationBloc = AuthenticationBloc(
@@ -48,7 +52,12 @@ main() {
           authenticationBloc.mapEventToState(AppStarted());
 
       // ASSERT
-      expect(await authenticatedState.first, Authenticated('true'));
+      expect(
+          await authenticatedState.first,
+          Authenticated(
+            userId: 'true',
+            email: 'john.doe@domain.tld',
+          ));
     });
   });
 
@@ -58,8 +67,14 @@ main() {
       UserRepositoryMock userRepositoryMock = UserRepositoryMock();
 
       when(userRepositoryMock.authencateWithEmail(
-              'john.doe@domain.tld', '123456'))
-          .thenAnswer((_) => Future.value('123456789'));
+        'john.doe@domain.tld',
+        '123456',
+      )).thenAnswer(
+        (_) => Future.value({
+          'uid': '123456789',
+          'email': 'john.doe@domain.tld',
+        }),
+      );
 
       // ignore: close_sinks
       final AuthenticationBloc authenticationBloc = AuthenticationBloc(
@@ -76,7 +91,12 @@ main() {
       );
 
       // ASSERT
-      expect(await authenticatedState.first, Authenticated('123456789'));
+      expect(
+          await authenticatedState.first,
+          Authenticated(
+            userId: '123456789',
+            email: 'john.doe@domain.tld',
+          ));
     });
 
     test("Doit retouner une erreur avec de mauvais identifiant", () async {
@@ -108,6 +128,83 @@ main() {
           await authenticatedState.first,
           AuthenticationErrors(
               errorCode: UserRepositoryException.BAD_CREDENTIALS));
+    });
+  });
+
+  group("EmailProfileUpdated", () {
+    test("Doit retourner un message de success (ProfileUpdated).", () async {
+      // ARRANGE
+      UserRepositoryMock userRepositoryMock = UserRepositoryMock();
+
+      when(userRepositoryMock.updateEmail('john.doe@domain.tld'))
+          .thenAnswer((_) => null);
+
+      // ignore: close_sinks
+      final AuthenticationBloc authenticationBloc = AuthenticationBloc(
+        userRepository: userRepositoryMock,
+      );
+
+      // ACT
+      Stream<AuthenticationState> authenticatedState = authenticationBloc
+          .mapEventToState(UpdateEmailProfileEvent('john.doe@domain.tld'));
+
+      // ASSERT
+
+      expect(await authenticatedState.first, ProfileUpdated());
+    });
+
+    test(
+        "Doit retourner une erreurs si le mail est déjà utiliser avec un autre compte (AuthenticationErrors).",
+        () async {
+      // ARRANGE
+      UserRepositoryMock userRepositoryMock = UserRepositoryMock();
+
+      when(userRepositoryMock.updateEmail('john.doe@domain.tld')).thenThrow(
+          UserRepositoryException(
+              code: UserRepositoryException.EMAIL_ALREADY_EXISTS));
+
+      // ignore: close_sinks
+      final AuthenticationBloc authenticationBloc = AuthenticationBloc(
+        userRepository: userRepositoryMock,
+      );
+
+      // ACT
+      Stream<AuthenticationState> authenticatedState = authenticationBloc
+          .mapEventToState(UpdateEmailProfileEvent('john.doe@domain.tld'));
+
+      // ASSERT
+      expect(
+        await authenticatedState.first,
+        AuthenticationErrors(
+            errorCode: UserRepositoryException.EMAIL_ALREADY_EXISTS),
+      );
+    });
+
+    test(
+        "Doit retourner une erreurs si le compte doit se reconnecter (AuthenticationErrors).",
+        () async {
+      // ARRANGE
+      UserRepositoryMock userRepositoryMock = UserRepositoryMock();
+
+      when(userRepositoryMock.updateEmail('john.doe@domain.tld')).thenThrow(
+          UserRepositoryException(
+              code: UserRepositoryException.REQUIRES_RECENT_LOGIN));
+
+      // ignore: close_sinks
+      final AuthenticationBloc authenticationBloc = AuthenticationBloc(
+        userRepository: userRepositoryMock,
+      );
+
+      // ACT
+      Stream<AuthenticationState> authenticatedState = authenticationBloc
+          .mapEventToState(UpdateEmailProfileEvent('john.doe@domain.tld'));
+
+      // ASSERT
+      expect(
+        await authenticatedState.first,
+        AuthenticationErrors(
+            errorCode: UserRepositoryException.REQUIRES_RECENT_LOGIN),
+      );
     });
   });
 

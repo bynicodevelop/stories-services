@@ -30,3 +30,13 @@ class UserAuthenticated extends AuthenticationEvent {
   @override
   List<Object> get props => [uid];
 }
+
+class UpdateEmailProfileEvent extends AuthenticationEvent {
+  final String email;
+
+  UpdateEmailProfileEvent(this.email);
+
+  @override
+  // TODO: implement props
+  List<Object> get props => [email];
+}
