@@ -68,17 +68,35 @@ class FirebaseUserRepository implements UserRepository {
 
       if (e.code == 'account-exists-with-different-credential') {
         throw UserRepositoryException(
-            code: UserRepositoryException.EMAIL_ALREADY_EXISTS);
+          code: UserRepositoryException.EMAIL_ALREADY_EXISTS,
+        );
       }
 
       if (e.code == 'requires-recent-login') {
         throw UserRepositoryException(
-            code: UserRepositoryException.REQUIRES_RECENT_LOGIN);
+          code: UserRepositoryException.REQUIRES_RECENT_LOGIN,
+        );
       }
 
       if (e.code == 'invalid-email') {
         throw UserRepositoryException(
-            code: UserRepositoryException.INVALID_EMAIL);
+          code: UserRepositoryException.INVALID_EMAIL,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await firebaseAuth.currentUser.delete();
+    } catch (e) {
+      print(e.code);
+
+      if (e.code == 'requires-recent-login') {
+        throw UserRepositoryException(
+          code: UserRepositoryException.REQUIRES_RECENT_LOGIN,
+        );
       }
     }
   }

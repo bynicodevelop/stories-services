@@ -208,6 +208,57 @@ main() {
     });
   });
 
+  group("DeleteUserAccountEvent", () {
+    test("Doit permettre de supprimer un compte avec succes", () async {
+      // ARRANGE
+      UserRepositoryMock userRepositoryMock = UserRepositoryMock();
+
+      when(userRepositoryMock.deleteAccount()).thenAnswer((_) => null);
+
+      // ignore: close_sinks
+      final AuthenticationBloc authenticationBloc = AuthenticationBloc(
+        userRepository: userRepositoryMock,
+      );
+
+      // ACT
+      Stream<AuthenticationState> authenticatedState =
+          authenticationBloc.mapEventToState(DeleteUserAccountEvent());
+
+      // ASSERT
+      expect(await authenticatedState.first, DeletedAccountState());
+
+      verify(userRepositoryMock.deleteAccount());
+    });
+
+    test("Doit retourner une erreur quand une reconnexion est nécessaire",
+        () async {
+      // ARRANGE
+      UserRepositoryMock userRepositoryMock = UserRepositoryMock();
+
+      when(userRepositoryMock.deleteAccount())
+          .thenThrow(UserRepositoryException(
+        code: UserRepositoryException.REQUIRES_RECENT_LOGIN,
+      ));
+
+      // ignore: close_sinks
+      final AuthenticationBloc authenticationBloc = AuthenticationBloc(
+        userRepository: userRepositoryMock,
+      );
+
+      // ACT
+      Stream<AuthenticationState> authenticatedState =
+          authenticationBloc.mapEventToState(DeleteUserAccountEvent());
+
+      // ASSERT
+      expect(
+        await authenticatedState.first,
+        AuthenticationErrors(
+          errorCode: UserRepositoryException.REQUIRES_RECENT_LOGIN,
+        ),
+      );
+    });
+  });
+
   group("SignOut", () {
     test("Doit retourner Unauthenticated", () async {
       // ARRANGE

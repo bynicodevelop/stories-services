@@ -12,5 +12,7 @@ abstract class UserRepository {
 
   Future<void> updateEmail(String email);
 
+  Future<void> deleteAccount();
+
   Future<void> signOut();
 }

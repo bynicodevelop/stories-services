@@ -49,7 +49,6 @@ class AuthenticationBloc
         yield AuthenticationErrors(errorCode: e.code);
       }
     } else if (event is UpdateEmailProfileEvent) {
-      print(event.props);
       try {
         await _userRepository.updateEmail(event.email);
 
@@ -62,6 +61,16 @@ class AuthenticationBloc
         yield AuthenticationInitialState();
       } catch (e) {
         print(e);
+      }
+    } else if (event is DeleteUserAccountEvent) {
+      try {
+        await _userRepository.deleteAccount();
+
+        yield DeletedAccountState();
+      } catch (e) {
+        yield AuthenticationErrors(errorCode: e.code);
+
+        yield AuthenticationInitialState();
       }
     } else if (event is SignOut) {
       await _userRepository.signOut();

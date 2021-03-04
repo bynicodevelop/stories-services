@@ -27,6 +27,8 @@ class Authenticated extends AuthenticationState {
 
 class Unauthenticated extends AuthenticationState {}
 
+class DeletedAccountState extends AuthenticationState {}
+
 class ProfileUpdated extends AuthenticationState {}
 
 class AuthenticationErrors extends AuthenticationState {

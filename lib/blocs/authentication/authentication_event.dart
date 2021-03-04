@@ -37,6 +37,10 @@ class UpdateEmailProfileEvent extends AuthenticationEvent {
   UpdateEmailProfileEvent(this.email);
 
   @override
-  // TODO: implement props
   List<Object> get props => [email];
+}
+
+class DeleteUserAccountEvent extends AuthenticationEvent {
+  @override
+  List<Object> get props => null;
 }

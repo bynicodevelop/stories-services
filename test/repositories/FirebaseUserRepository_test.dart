@@ -361,6 +361,57 @@ main() {
       );
     });
   });
+
+  group("deleteAccount", () {
+    test("Doit permettre la suppression d'un compte avec success", () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      await firebaseUserRepository.deleteAccount();
+
+      // ASSERT
+      verify(userMock.delete());
+    });
+
+    test("Doit soulever une erreur quand une authentification est requis",
+        () async {
+      // ARRANGE
+      FirebaseAuthMock firebaseAuthMock = FirebaseAuthMock();
+      FirebaseUserMock userMock = FirebaseUserMock();
+
+      when(userMock.delete()).thenThrow(FirebaseAuthException(
+        code: 'requires-recent-login',
+        message: null,
+      ));
+
+      when(firebaseAuthMock.currentUser).thenReturn(userMock);
+
+      FirebaseUserRepository firebaseUserRepository = FirebaseUserRepository(
+        firebaseAuth: firebaseAuthMock,
+      );
+
+      // ACT
+      // ASSERT
+      expect(
+        () async => await firebaseUserRepository.deleteAccount(),
+        throwsA(
+          allOf(
+            isInstanceOf<UserRepositoryException>(),
+            predicate(
+                (f) => f.code == UserRepositoryException.REQUIRES_RECENT_LOGIN),
+          ),
+        ),
+      );
+    });
+  });
 }
 
 class FirebaseAuthMock extends Mock implements FirebaseAuth {}
